@@ -130,7 +130,6 @@ if __name__ == '__main__':
             try:
                 for i in response['errors'].split('.'):
                     i and print(i)
-                print('here')
                 sys.exit(1)
             except:
                 sys.exit(1)
