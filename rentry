@@ -115,7 +115,7 @@ if __name__ == '__main__':
             edit_code = a
 
     command = (args[0:1] or [None])[0]
-    command or usage() and sys.exit(1)
+    command or sys.exit(usage())
     command in ['new', 'edit', 'raw'] or sys.exit('error: command must be new, edit or raw')
 
     text = (args[1:2] or [None])[0]
