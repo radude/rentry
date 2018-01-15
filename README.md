@@ -1,8 +1,22 @@
-[Rentry.co](https://rentry.co) is a pastebin/publishing service with markdown support, preview, custom urls and editing. This repository contains a simple script that allows pasting and editing from command line interface.
+# rentry
 
-### Usage
+[Rentry.co](https://rentry.co) is a pastebin/publishing service with markdown support, preview, custom urls and editing. 
+
+This repository contains a simple script that allows pasting and editing from command line interface.
+
+## Installation
+
+Manually:  
+```sh
+wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry && chmod +x ./rentry
+```
+
+[PyPI](TBD): pass
+
+## Usage
 
 ```console
+$ rentry --help
 
 Usage: rentry {new | edit | raw} {-h | --help} {-u | --url} {-p | --edit-code} text
 
