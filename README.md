@@ -11,7 +11,10 @@ Manually:
 wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry && chmod +x ./rentry
 ```
 
-[PyPI](TBD): pass
+[PyPI](https://pypi.python.org/pypi/rentry) (Make sure you are using Python3 and pip3):
+```sh
+pip install rentry
+```
 
 ## Usage
 
