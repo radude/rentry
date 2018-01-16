@@ -14,15 +14,9 @@ This repository contains a simple script that allows pasting and editing from co
 wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry && chmod +x ./rentry
 ```
 
-##### [PyPI](https://pypi.python.org/pypi/rentry) (Make sure you are using Python3 and pip3):
+##### [PyPI](https://pypi.python.org/pypi/rentry):
 ```sh
-pip install rentry
-```
-
-or
-
-```sh
-python3 -m pip install rentry --user
+pip3 install rentry
 ```
 
 ## Usage
