@@ -1,6 +1,6 @@
 # rentry
 
-<a href="https://rentry.co/"><img src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown pastebin"></a>
+<a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown pastebin"></a>
 
 [Rentry.co](https://rentry.co) is a pastebin/publishing service with markdown support, preview, custom urls and editing. 
 
