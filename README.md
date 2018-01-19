@@ -52,5 +52,5 @@ Optional Url can be set. It goes rentry.co/HERE. If no Url was set then random U
 
 ##### Edit code
 
-Optional Edit code can be set. It can be used to edit the entry later. If no Edit code was set then random Edit code will be generated automatically. Generated Edit code will be shown to you only once, so remember it or save it.
+Optional edit code can be set. It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it.
 
