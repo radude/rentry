@@ -2,7 +2,7 @@
 
 <a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown pastebin"></a>
 
-[Rentry.co](https://rentry.co) is a pastebin/publishing service with markdown support, preview, custom urls and editing. 
+[Rentry.co](https://rentry.co) is markdown-powered pastebin/publishing service with preview, custom urls and editing. 
 
 This repository contains a simple script that allows pasting and editing from command line interface.  
   
