@@ -55,5 +55,5 @@ It goes rentry.co/HERE. If no Url was set then random Url will be generated auto
 ##### Edit code
 
 Optional edit code can be set (`-p, --edit-code EDIT-CODE`)  
-It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it.
+It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it. You can share this code with anyone so a group of people can edit the same entry.
 
