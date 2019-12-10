@@ -1,6 +1,7 @@
 # rentry
 
 <a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown pastebin"></a>
+[![Run on Repl.it](https://repl.it/badge/github/radude/rentry)](https://repl.it/github/radude/rentry)
 
 [Rentry.co](https://rentry.co) is markdown-powered pastebin/publishing service with preview, custom urls and editing. 
 
