@@ -1,8 +1,8 @@
 # rentry
 
-<a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown pastebin"></a>
+<a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown paste repository"></a>
 
-[Rentry.co](https://rentry.co) is markdown-powered pastebin/publishing service with preview, custom urls and editing. 
+[Rentry.co](https://rentry.co) is markdown-powered paste/publishing service with preview, custom urls and editing. 
 
 This repository contains a simple script that allows pasting and editing from command line interface.  
   
@@ -19,6 +19,8 @@ wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry &
 pip3 install rentry
 ```
 
+pip install -r 'requirements.txt'
+cp env_example .env
 ## Usage
 
 ```console
