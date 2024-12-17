@@ -42,7 +42,9 @@ class UrllibClient:
 
 def raw(url):
     client = UrllibClient()
-    return json_loads(client.get(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + '/api/raw/{}'.format(url)).data)
+    endpoint = f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + '/api/raw/{}'.format(url)
+    print(endpoint)
+    return json_loads(client.get(endpoint).data)
 
 
 def new(url, edit_code, text):
@@ -57,7 +59,6 @@ def new(url, edit_code, text):
         'edit_code': edit_code,
         'text': text
     }
-
     return json_loads(client.post(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + '/api/new', payload, headers=_headers).data)
 
 

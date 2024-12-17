@@ -21,7 +21,8 @@ pip3 install rentry
 
 pip install -r 'requirements.txt'
 cp env_example .env
-## Usage
+
+## Usage (Command Interface)
 
 ```console
 $ rentry --help
@@ -29,15 +30,23 @@ $ rentry --help
 Usage: rentry {new | edit | raw} {-h | --help} {-u | --url} {-p | --edit-code} text
 
 Commands:
-  new   create a new entry
-  edit  edit an existing entry
-  raw   get raw markdown text of an existing entry
+  new     create a new entry
+  edit    edit an existing entry's text
+  raw     get raw markdown text of an existing entry
+  delete  delete an entry
     
 Options:
   -h, --help                 show this help message and exit
   -u, --url URL              url for the entry, random if not specified
   -p, --edit-code EDIT-CODE  edit code for the entry, random if not specified
-    
+  -f, --field FIELD-NAME     the field you wish to update (use on update command only)
+  -v, --value VALUE          the value you wish to update (use on update command only)
+
+Fields: (for use on update command only)
+  edit_code
+  url
+  modify_code
+
 Examples:
   rentry new 'markdown text'               # new entry with random url and edit code
   rentry new -p pw -u example 'text'       # with custom edit code and url 
@@ -46,7 +55,13 @@ Examples:
   cat FILE | rentry edit -p pw -u example  # read from FILE and edit the example entry
   rentry raw -u example                    # get raw markdown text
   rentry raw -u https://rentry.co/example  # -u accepts absolute and relative urls
-    
+
+  rentry delete -p pw -u example          # deletes an entry
+  rentry update -p pw -u example -f 'edit_code' -v 'new-pw'   # Sets the edit code to something new
+  rentry update -p pw -u example -f 'url' -v 'new_url'        # Sets the url to something new
+  rentry update -p pw -u example -f 'modify_code' -v 'm:1'    # Sets the modify code to something new
+  rentry update -p pw -u example -f 'modify_code' -v ''       # Unsets the modify code
+  
 ```
 
 ##### Url
@@ -59,3 +74,54 @@ It goes rentry.co/HERE. If no Url was set then random Url will be generated auto
 Optional edit code can be set (`-p, --edit-code EDIT-CODE`)  
 It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it. You can share this code with anyone so a group of people can edit the same entry.
 
+## Usage (API)
+
+See the example scripts for a quick start.
+
+Send a standard POST request to the below endpoints. Make sure to provide a csrf token and a request header.
+
+Starred fields are required. replace [url] with the actual URL in question (without brackets).
+
+Example endpoint (Editing rentry.co/example): /edit/example
+
+To avoid confusion, all fields that can be used as well as set (url, edit_code, modify_code) have new_ appended to their names when setting them.
+
+### /new
+
+Fields:
+
+* csrfmiddlewaretoken *
+* text *
+* metadata
+* url
+* edit_code
+
+### /edit/[url]
+
+Fields:
+
+* csrfmiddlewaretoken *
+* edit_code *
+* text
+* metadata
+* new_url
+* new_edit_code
+* new_modify_code
+
+### /raw/[url]
+
+Fields:
+
+* csrfmiddlewaretoken *
+* url
+
+Headers:
+
+rentry-auth (contact support@rentry.co for a code to use here. This header then gives access to all posts at /raw). Or use it as a page's metadata value : SECRET_RAW_ACCESS_CODE to permit raw access without this header.
+
+### /delete/[url]
+
+Fields:
+
+* csrfmiddlewaretoken *
+* edit_code *
