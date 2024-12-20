@@ -85,8 +85,7 @@ All fields that can be used as well as set (url, edit_code, modify_code) have ne
 ### Returns
 
 * status
-* error (not present if no error)
-* content (all return values below are returned contained within this field)
+* content (if status is not 200, the error will be displayed here. Otherwise, all return values below are returned contained within this field)
 
 ### /new
 
@@ -147,7 +146,7 @@ Returns:
 * edit_date
 * modify_code_set (bool)
 * text
-* metadata
+* metadata (returns as an object with key/value pairs. Each value is the entire set metadata value as a single string)
 * metadata_version
 
 ### /delete/[url]
