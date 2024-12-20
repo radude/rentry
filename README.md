@@ -4,8 +4,7 @@
 
 [Rentry.co](https://rentry.co) is markdown-powered paste/publishing service with preview, custom urls and editing. 
 
-This repository contains a simple script that allows pasting and editing from command line interface.  
-  
+This repository contains a simple script that allows pasting and editing from command line interface. It also gives examples for accessing each endpoint programatically.
   
 ## Installation
 
@@ -14,10 +13,7 @@ This repository contains a simple script that allows pasting and editing from co
 wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry && chmod +x ./rentry
 ```
 
-##### [PyPI](https://pypi.python.org/pypi/rentry):
-```sh
-pip3 install rentry
-```
+
 
 pip install -r 'requirements.txt'
 cp env_example .env
@@ -84,7 +80,13 @@ Starred fields are required. replace [url] with the actual URL in question (with
 
 Example endpoint (Editing rentry.co/example): /edit/example
 
-To avoid confusion, all fields that can be used as well as set (url, edit_code, modify_code) have new_ appended to their names when setting them.
+All fields that can be used as well as set (url, edit_code, modify_code) have new_ appended to their names when setting them.
+
+### Returns
+
+* status
+* error (not present if no error)
+* content (all return values below are returned contained within this field)
 
 ### /new
 
@@ -98,15 +100,18 @@ Fields:
 
 ### /edit/[url]
 
+You may provide a modify code to the edit_code field if one is set. Use this to give other people edit access to a page without the ability to steal it.
+
 Fields:
 
 * csrfmiddlewaretoken *
 * edit_code *
 * text
 * metadata
+* update_mode
 * new_url
 * new_edit_code
-* new_modify_code
+* new_modify_code (provide 'm:' to unset, this matches the website's functionality)
 
 ### /raw/[url]
 
@@ -118,6 +123,32 @@ Fields:
 Headers:
 
 rentry-auth (contact support@rentry.co for a code to use here. This header then gives access to all posts at /raw). Or use it as a page's metadata value : SECRET_RAW_ACCESS_CODE to permit raw access without this header.
+
+Returns:
+
+* text
+
+To fetch metadata, please use /fetch endpoint
+
+### /fetch/[url]
+
+Fields:
+
+* csrfmiddlewaretoken *
+* edit_code *
+
+Returns:
+
+* url
+* url_case (if you set the URL with a different case structure than all lowercase, this will reflect that)
+* views
+* pub_date (YYYY-MM-DD T HH:MM:SS) (will not change if deleted and re-created)
+* activated_date (if deleted and re-created, this is when this occured last)
+* edit_date
+* modify_code_set (bool)
+* text
+* metadata
+* metadata_version
 
 ### /delete/[url]
 

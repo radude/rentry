@@ -58,7 +58,7 @@ payload = {
     'text': 'test updated!',
     'edit_code' : result_create['edit_code'],
     'new_modify_code' : 'm:abc',
-    'metadata_mode' : 'upsert', # This causes only these metadata options to change, rather than a full replacement. Remove if you want to replace fully.
+    'update_mode' : 'upsert', # This causes only these metadata options to change, rather than a full replacement. Remove if you want to replace fully.
     'metadata' : 'CONTAINER_PADDING = 10px \n \
 CONTAINER_MAX_WIDTH = 600px  \n \
 CONTAINER_INNER_FOREGROUND_COLOR = RGBA(123,123,123,0.2) \n \
@@ -73,7 +73,7 @@ payload = {
     'csrfmiddlewaretoken': csrftoken,
     'text': 'test updated using modify',
     'edit_code' : 'm:abc',
-    'metadata_mode' : 'upsert',
+    'update_mode' : 'upsert',
     'metadata' : "CONTENT_FONT_WEIGHT = 600 \n \
     "
 }
