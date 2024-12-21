@@ -60,5 +60,5 @@ payload = {
     'edit_code' : result_create['edit_code'],
 }
 #result_delete = client.post(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + f"/api/delete/{result_create['url_short']}", payload, headers=_headers).data
-result_delete = client.post(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + f"/api/delete/10", payload, headers=_headers).data
+result_delete = client.post(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + f"/api/delete/{result_create['url_short']}", payload, headers=_headers).data
 print(result_delete)

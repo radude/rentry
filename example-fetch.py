@@ -55,7 +55,7 @@ print(result_create)
 ## Then, fetch
 payload = {
     'csrfmiddlewaretoken': csrftoken,
-    'edit_code' : '123',
+    'edit_code' : result_create['edit_code'],
 }
 result_fetch = client.post(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}" + f"/api/fetch/{result_create['url_short']}", payload, headers=_headers).data
 print(result_fetch)

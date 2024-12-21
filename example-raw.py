@@ -42,6 +42,7 @@ client, cookie = UrllibClient(), SimpleCookie()
 cookie.load(vars(client.get(f"{env['BASE_PROTOCOL']}{env['BASE_URL']}"))['headers']['Set-Cookie'])
 csrftoken = cookie['csrftoken'].value
 
+# This example does not work without further adjustments!
 # To use the /raw endpoint you must have a SECRET_RAW_ACCESS_CODE. You can request one from support@rentry.co.
 # Either set this value in each of your page, or use it below as a custom header.
 
