@@ -6,6 +6,7 @@
 
 import getopt
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from json import dumps as json_dumps, loads as json_loads
@@ -20,6 +21,9 @@ except ImportError:
 base_url = environ.get('BASE_PROTOCOL', 'https://') + environ.get('BASE_URL', 'rentry.co')
 
 # The /api endpoints are CSRF-exempt: no csrf token, cookies or Referer header needed.
+
+# Sent on edit, fetch, delete and update. Pages that are not gated ignore it.
+captcha_code = environ.get('CAPTCHA_CODE', '')
 
 
 class UrllibClient:
@@ -41,6 +45,12 @@ class UrllibClient:
         return response
 
 
+def with_captcha_code(payload):
+    if captcha_code:
+        payload['captcha_code'] = captcha_code
+    return payload
+
+
 def raw(url, auth_code=''):
     client = UrllibClient()
     headers = {'rentry-auth': auth_code} if auth_code else {}
@@ -53,7 +63,7 @@ def fetch(url, edit_code):
     payload = {
         'edit_code': edit_code
     }
-    return json_loads(client.post(base_url + '/api/fetch/{}'.format(url), payload).data)
+    return json_loads(client.post(base_url + '/api/fetch/{}'.format(url), with_captcha_code(payload)).data)
 
 
 def new(url, edit_code, text):
@@ -74,7 +84,7 @@ def edit(url, edit_code, text):
         'edit_code': edit_code,
         'text': text
     }
-    return json_loads(client.post(base_url + '/api/edit/{}'.format(url), payload).data)
+    return json_loads(client.post(base_url + '/api/edit/{}'.format(url), with_captcha_code(payload)).data)
 
 
 def update(url, edit_code, field, value):
@@ -87,7 +97,7 @@ def update(url, edit_code, field, value):
         'update_mode': 'upsert',
         'new_' + field: value
     }
-    return json_loads(client.post(base_url + '/api/edit/{}'.format(url), payload).data)
+    return json_loads(client.post(base_url + '/api/edit/{}'.format(url), with_captcha_code(payload)).data)
 
 
 def delete(url, edit_code):
@@ -96,7 +106,16 @@ def delete(url, edit_code):
     payload = {
         'edit_code': edit_code
     }
-    return json_loads(client.post(base_url + '/api/delete/{}'.format(url), payload).data)
+    return json_loads(client.post(base_url + '/api/delete/{}'.format(url), with_captcha_code(payload)).data)
+
+
+def extend_captcha_code():
+    client = UrllibClient()
+
+    payload = {
+        'captcha_code': captcha_code
+    }
+    return json_loads(client.post(base_url + '/api/extend-captcha-code', payload).data)
 
 
 def exit_with_errors(response):
@@ -106,12 +125,24 @@ def exit_with_errors(response):
             i and print(i)
     except:
         pass
+    # A gated page adds captcha_url to every 400, whatever the error. Only point at the captcha
+    # when no code was sent or the code did not work (a 429, or a 404 from extend).
+    if response.get('captcha_url'):
+        if response['status'] == '400' and captcha_code:
+            print('\nNote: this page is locked after too many wrong edit codes, so requests to it need a working captcha code.')
+        else:
+            print_captcha_help(response['captcha_url'])
     sys.exit(1)
+
+
+def print_captcha_help(captcha_url):
+    print('\nOpen {} in a browser and complete the captcha to get a captcha code.'.format(captcha_url))
+    print('Then rerun with -c CODE, or set CAPTCHA_CODE in your environment or .env file.')
 
 
 def usage():
     print('''
-Usage: rentry {new | edit | raw | fetch | delete | update} {-h | --help} {-u | --url} {-p | --edit-code} {-f | --field} {-v | --value} {-a | --auth-code} text
+Usage: rentry {new | edit | raw | fetch | delete | update | extend} {-h | --help} {-u | --url} {-p | --edit-code} {-f | --field} {-v | --value} {-a | --auth-code} {-c | --captcha-code} text
 
 Commands:
   new     create a new entry
@@ -120,6 +151,7 @@ Commands:
   fetch   fetch an entry's full details (text, metadata, dates) as JSON
   delete  delete an entry
   update  update an entry's edit code, url or modify code
+  extend  keep a captcha code from expiring and show its expiry date
 
 Options:
   -h, --help                 show this help message and exit
@@ -128,6 +160,8 @@ Options:
   -f, --field FIELD-NAME     the field you wish to update (use on update command only)
   -v, --value VALUE          the value you wish to update (use on update command only)
   -a, --auth-code CODE       rentry-auth access code (use on raw command only)
+  -c, --captcha-code CODE    captcha code for pages locked after wrong edit codes,
+                             defaults to the CAPTCHA_CODE environment variable
 
 Fields: (for use on update command only)
   edit_code
@@ -150,13 +184,18 @@ Examples:
   rentry update -p pw -u example -f 'url' -v 'new_url'        # Sets the url to something new
   rentry update -p pw -u example -f 'modify_code' -v 'm:1'    # Sets the modify code to something new
   rentry update -p pw -u example -f 'modify_code' -v ''       # Unsets the modify code
+
+  rentry edit -p pw -u example -c CODE 'text'  # edit a page locked after wrong edit codes
+  rentry extend -c CODE                        # keeps a captcha code from expiring
     ''')
 
 
 def main():
+    global captcha_code
+
     try:
         environ.pop('POSIXLY_CORRECT', None)
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "hu:p:f:v:a:", ["help", "url=", "edit-code=", "field=", "value=", "auth-code="])
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "hu:p:f:v:a:c:", ["help", "url=", "edit-code=", "field=", "value=", "auth-code=", "captcha-code="])
     except getopt.GetoptError as e:
         sys.exit("error: {}".format(e))
 
@@ -176,10 +215,12 @@ def main():
             value = a
         elif o in ("-a", "--auth-code"):
             auth_code = a
+        elif o in ("-c", "--captcha-code"):
+            captcha_code = a
 
     command = (args[0:1] or [None])[0]
     command or sys.exit(usage())
-    command in ['new', 'edit', 'raw', 'fetch', 'delete', 'update'] or sys.exit('error: command must be new, edit, raw, fetch, delete or update')
+    command in ['new', 'edit', 'raw', 'fetch', 'delete', 'update', 'extend'] or sys.exit('error: command must be new, edit, raw, fetch, delete, update or extend')
 
     text = (args[1:2] or [None])[0]
     if not text and command in ('new', 'edit'):
@@ -239,6 +280,22 @@ def main():
         if response['status'] != '200':
             exit_with_errors(response)
         print('Ok')
+
+    elif command == 'extend':
+        captcha_code or sys.exit('error: captcha code is required (-c or CAPTCHA_CODE)')
+
+        try:
+            response = extend_captcha_code()
+        except urllib.error.HTTPError as e:
+            # Instances without the feature answer with a real HTTP 404 page.
+            if e.code == 404:
+                sys.exit('error: {} does not support captcha codes'.format(base_url))
+            sys.exit('error: {} returned HTTP {} {}'.format(base_url, e.code, e.reason))
+        except urllib.error.URLError as e:
+            sys.exit('error: could not reach {}: {}'.format(base_url, e.reason))
+        if response['status'] != '200':
+            exit_with_errors(response)
+        print('Expires:    {} (UTC)'.format(response['expires']))
 
 
 if __name__ == '__main__':

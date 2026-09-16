@@ -41,7 +41,7 @@ Both the CLI and the examples default to `https://rentry.co`. Copy `.env.example
 ```console
 $ rentry --help
 
-Usage: rentry {new | edit | raw | fetch | delete | update} {-h | --help} {-u | --url} {-p | --edit-code} {-f | --field} {-v | --value} {-a | --auth-code} text
+Usage: rentry {new | edit | raw | fetch | delete | update | extend} {-h | --help} {-u | --url} {-p | --edit-code} {-f | --field} {-v | --value} {-a | --auth-code} {-c | --captcha-code} text
 
 Commands:
   new     create a new entry
@@ -50,6 +50,7 @@ Commands:
   fetch   fetch an entry's full details (text, metadata, dates) as JSON
   delete  delete an entry
   update  update an entry's edit code, url or modify code
+  extend  keep a captcha code from expiring and show its expiry date
 
 Options:
   -h, --help                 show this help message and exit
@@ -58,6 +59,8 @@ Options:
   -f, --field FIELD-NAME     the field you wish to update (use on update command only)
   -v, --value VALUE          the value you wish to update (use on update command only)
   -a, --auth-code CODE       rentry-auth access code (use on raw command only)
+  -c, --captcha-code CODE    captcha code for pages locked after wrong edit codes,
+                             defaults to the CAPTCHA_CODE environment variable
 
 Fields: (for use on update command only)
   edit_code
@@ -80,6 +83,9 @@ Examples:
   rentry update -p pw -u example -f 'url' -v 'new_url'        # Sets the url to something new
   rentry update -p pw -u example -f 'modify_code' -v 'm:1'    # Sets the modify code to something new
   rentry update -p pw -u example -f 'modify_code' -v ''       # Unsets the modify code
+
+  rentry edit -p pw -u example -c CODE 'text'  # edit a page locked after wrong edit codes
+  rentry extend -c CODE                        # keeps a captcha code from expiring
 ```
 
 ##### Url
@@ -91,6 +97,11 @@ It goes rentry.co/HERE. If no Url was set then random Url will be generated auto
 
 Optional edit code can be set (`-p, --edit-code EDIT-CODE`)
 It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it. You can share this code with anyone so a group of people can edit the same entry.
+
+##### Captcha code
+
+Optional captcha code can be set (`-c, --captcha-code CODE`), or kept in the `CAPTCHA_CODE` environment variable or `.env` file so every run uses it.
+It is only needed for a page that has been temporarily locked after too many wrong edit codes. When that happens, the CLI prints a link: open it in a browser, complete the captcha and use the code it gives you. Run `rentry extend` now and then to stop the code expiring. See [Captcha codes](#captcha-codes).
 
 ## Usage (Library)
 
@@ -110,6 +121,20 @@ print(details)
 
 Every method hands back the parsed API response as a dict. On success, `response['status']` is `'200'`. When something goes wrong, the details are in `response['content']` and `response['errors']`.
 
+If your client edits, fetches or deletes pages unattended, give it a [captcha code](#captcha-codes) so a locked page does not stop it:
+
+```python
+client = RentryClient(captcha_code='YOUR_CODE')  # sent with every edit, fetch and delete
+
+result = client.edit('example', 'pw', text='updated!')
+if result['status'] == '429' and 'captcha_url' in result:
+    print('Locked, and the code does not work. Get a new one at', result['captcha_url'])
+
+print(client.extend_captcha_code())  # {'status': '200', 'content': 'OK', 'expires': '2026-12-15'}
+```
+
+`edit`, `fetch` and `delete` also take `captcha_code=` to override the client's code for one request. The library never extends a code by itself, so call `extend_captcha_code()` from time to time, for example once per run.
+
 ### Examples
 
 Each script in [`examples/`](examples/) covers one use case and runs as-is:
@@ -125,6 +150,7 @@ Each script in [`examples/`](examples/) covers one use case and runs as-is:
 | [`examples/fetch.py`](examples/fetch.py) | Fetch a page's full details |
 | [`examples/delete.py`](examples/delete.py) | Delete a page |
 | [`examples/raw.py`](examples/raw.py) | Read raw text with a rentry-auth access code |
+| [`examples/captcha_code.py`](examples/captcha_code.py) | Get past a locked page with a captcha code, then extend the code |
 
 ## Usage (API)
 
@@ -152,8 +178,40 @@ There are roughly 63 options in total, covering the page itself, sharing, safety
 * status
 * content (if status is not 200, the error will be displayed here. Otherwise, all return values below are returned contained within this field)
 * errors (on validation failures: the field-level error messages)
+* captcha_url (on /edit, /fetch and /delete: on every `400` while the page is gated, and on the gate's `429`; see [Captcha codes](#captcha-codes))
 
-Responses always come back with HTTP 200, so check the `status` value inside the JSON body instead. A client should handle these: `200` success, `400` validation failed (details in `errors`), `403` access denied (raw access codes), `404` entry does not exist, `405` wrong HTTP method, `429` rate limited (back off and retry later), `503` database temporarily unavailable.
+Responses always come back with HTTP 200, so check the `status` value inside the JSON body instead. A client should handle these: `200` success, `400` validation failed (details in `errors`), `403` access denied (raw access codes), `404` entry does not exist, `405` wrong HTTP method, `429` rate limited (back off and retry later) or captcha required, `503` database temporarily unavailable.
+
+A `429` that carries `captcha_url` is not a rate limit: the page is gated, and retrying without a captcha code keeps failing for up to an hour. Rate-limit `429`s never carry `captcha_url`. A `400` carries `captcha_url` whenever the page is gated, whatever the error, so read `errors` for what actually failed.
+
+### Captcha codes
+
+Rentry pages have bruteforce protection against their edit codes and will require a captcha for all future requests, from any source, for 1 hour after the edit code was entered incorrectly 3 times. This triggers on requests to /edit, /fetch and /delete (or the web edit page) that fail with `Invalid edit code.` or `Invalid modify code.`.
+
+Captcha codes can bypass any number of captchas where the correct edit code was provided.
+
+* The first 2 wrong edit codes return the usual `400`. The 3rd also returns `400` and also adds `captcha_url`, and gates the page.
+* The gate lasts until 1 hour after the **first** wrong edit code, not the latest. Then the counter resets and the page is open again.
+* While gated, /edit, /fetch and /delete refuse any request without a working captcha code, **before** checking the edit code, so a refusal never reveals whether the edit code was right:
+
+  ```json
+  {"status": "429", "content": "Too many wrong edit codes have been submitted for this URL within the past hour. Complete the captcha at captcha_url and resend this request with the captcha_code it gives you.", "captcha_url": "https://rentry.co/edit-captcha"}
+  ```
+
+* With a working code, the request is handled normally. A right edit code succeeds and costs the code nothing. A wrong one returns `400` with `errors` and `captcha_url`, adds to the page's counter, and gives the code a strike.
+* `captcha_url` on a `400` means the page is gated, not that the edit code was wrong. Every `400` from /edit, /fetch or /delete carries it while the page is gated, including other validation errors such as a bad `new_url` sent with a working code.
+
+Anyone's wrong guesses can gate your page, so an automated client that edits pages should hold a captcha code.
+
+**Getting one:** Open `captcha_url` (<https://rentry.co/edit-captcha>) in a browser, complete the captcha and presses *Get code*. This cannot be scripted. A code is 32 letters and digits.
+
+**Sending it:** Apply `captcha_code` field on /edit, /fetch and /delete. It is safe to send on every request, since pages that are not gated ignore it.
+
+**Limits:**
+
+* One code works on every page. Strikes also count across pages: after 3 wrong edit codes sent with the code, on any pages, it expires and will need replacing.
+* A code expires after 90 days without use. 
+* Use means getting past a gated page with the code (whether the edit code then turns out right or wrong), or calling [/extend-captcha-code](#extend-captcha-code). **Sending the code to a page that is not gated is not use**, so a client whose pages are rarely gated should extend its code regularly. Use is recorded at most once per UTC day.
 
 ### /new
 
@@ -180,6 +238,7 @@ Fields:
 * new_url
 * new_edit_code
 * new_modify_code (provide 'm:' to unset, this matches the website's functionality)
+* captcha_code (see [Captcha codes](#captcha-codes))
 
 ##### update_mode
 
@@ -214,6 +273,7 @@ To fetch metadata, please use /fetch endpoint
 Fields:
 
 * edit_code * (a modify code is also accepted here)
+* captcha_code (see [Captcha codes](#captcha-codes))
 
 Returns:
 
@@ -233,3 +293,31 @@ Returns:
 Fields:
 
 * edit_code * (the full edit code only; a modify code cannot delete)
+* captcha_code (see [Captcha codes](#captcha-codes))
+
+### /extend-captcha-code
+
+Records use of a captcha code without editing anything, so it does not expire, and reports when it will. POST only. A trailing slash is accepted.
+
+Fields:
+
+* captcha_code *
+
+Returns:
+
+* expires (YYYY-MM-DD, UTC: the last day the code works if nothing uses it again, which is today + 90)
+
+| status | When |
+|---|---|
+| `200` | The code works, and now counts as used today |
+| `404` | Missing, empty, unknown, used up (3 strikes) or expired. The response carries `captcha_url` |
+| `405` | Not a POST |
+| `429` | More than 10 calls in 10 minutes from one IP |
+| `503` | Database briefly unavailable |
+| `500` | Anything else |
+
+```sh
+curl -X POST https://rentry.co/api/extend-captcha-code -d "captcha_code=YOUR_CODE"
+```
+
+Calling it more than once a day is harmless but gains nothing.
