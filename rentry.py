@@ -29,13 +29,13 @@ captcha_code = environ.get('CAPTCHA_CODE', '')
 class UrllibClient:
     """Simple HTTP client."""
 
-    def get(self, url, headers={}):
-        request = urllib.request.Request(url, headers=headers)
+    def get(self, url, headers=None):
+        request = urllib.request.Request(url, headers=headers or {})
         return self._request(request)
 
-    def post(self, url, data=None, headers={}):
+    def post(self, url, data=None, headers=None):
         postdata = urllib.parse.urlencode(data).encode()
-        request = urllib.request.Request(url, postdata, headers)
+        request = urllib.request.Request(url, postdata, headers or {})
         return self._request(request)
 
     def _request(self, request):

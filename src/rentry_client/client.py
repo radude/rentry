@@ -126,8 +126,8 @@ class RentryClient:
         request = urllib.request.Request(self.base_url + path, data)
         return self._request(request)
 
-    def _get(self, path, headers={}):
-        request = urllib.request.Request(self.base_url + path, headers=headers)
+    def _get(self, path, headers=None):
+        request = urllib.request.Request(self.base_url + path, headers=headers or {})
         return self._request(request)
 
     @staticmethod
